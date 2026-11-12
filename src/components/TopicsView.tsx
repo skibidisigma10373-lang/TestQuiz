@@ -15,6 +15,8 @@ import {
 import { MathCategory, MathQuestion, UserExamAttempt } from '../types/math';
 import { categoryMeta } from '../data/exams';
 import { mathQuestions } from '../data/mathQuestions';
+import { SchoolUser } from '../types/auth';
+import { Bot, School, Sliders } from 'lucide-react';
 
 interface Props {
   onStartQuiz: (category: MathCategory | 'all') => void;
@@ -22,6 +24,9 @@ interface Props {
   onOpenFormulas: () => void;
   onOpenCalculator: () => void;
   onOpenCustomQuiz: () => void;
+  onOpenSupport: () => void;
+  onOpenLogin: () => void;
+  currentUser: SchoolUser | null;
   recentAttempts: UserExamAttempt[];
 }
 
@@ -31,6 +36,9 @@ export const TopicsView: React.FC<Props> = ({
   onOpenFormulas,
   onOpenCalculator,
   onOpenCustomQuiz,
+  onOpenSupport,
+  onOpenLogin,
+  currentUser,
   recentAttempts
 }) => {
   const categories: MathCategory[] = [
@@ -240,41 +248,82 @@ export const TopicsView: React.FC<Props> = ({
       )}
 
       {/* Feature Information Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
-            <BrainCircuit className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 text-sm">Step-by-Step Proofs</h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Never get stuck on an equation: view mathematical proofs with full intermediate derivations.
-            </p>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-            <Calculator className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="font-bold text-slate-900 text-sm">Interactive Calculator</h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Test expressions, trigonometric functions, exponents, and explore equations directly in your browser.
-            </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
+              <BrainCircuit className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">Step-by-Step Proofs</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                View mathematical proofs with full derivations across algebra, geometry, and calculus.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-5 h-5" />
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">Customize Quizzes</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Build your own problem sets, add custom questions, and assign them to students.
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-slate-900 text-sm">Formal Exam Simulator</h4>
-            <p className="text-xs text-slate-500 mt-1">
-              Simulate actual standardized testing conditions with countdown timers and question flagging.
-            </p>
+          <button
+            onClick={onOpenCustomQuiz}
+            className="mt-3 text-xs font-bold text-indigo-600 hover:text-indigo-800 text-left flex items-center gap-1 hover:underline cursor-pointer"
+          >
+            <span>Open Quiz Customizer</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <School className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">School Login (Google/Clever)</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                {currentUser ? `Signed in as ${currentUser.name} (${currentUser.role})` : 'Instant school-based login for students and teachers.'}
+              </p>
+            </div>
           </div>
+          <button
+            onClick={onOpenLogin}
+            className="mt-3 text-xs font-bold text-emerald-600 hover:text-emerald-800 text-left flex items-center gap-1 hover:underline cursor-pointer"
+          >
+            <span>{currentUser ? 'Manage School Account' : 'Sign In with School SSO'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">GEODVS-Support</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                AI diagnostic tool used exclusively for reporting math &amp; system issues.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenSupport}
+            className="mt-3 text-xs font-bold text-rose-600 hover:text-rose-800 text-left flex items-center gap-1 hover:underline cursor-pointer"
+          >
+            <span>Report an Issue</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

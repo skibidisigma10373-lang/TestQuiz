@@ -7,33 +7,34 @@ import {
   Sparkles, 
   Volume2, 
   VolumeX, 
-  Globe,
   Sliders,
   Menu,
-  X
+  X,
+  Bot,
+  School,
+  UserCheck
 } from 'lucide-react';
 import { toggleSound, isSoundEnabled } from '../utils/sound';
+import { SchoolUser } from '../types/auth';
 
-export type ActiveTab = 'topics' | 'exams' | 'formulas' | 'calculator';
+export type ActiveTab = 'topics' | 'exams' | 'custom-quizzes' | 'formulas' | 'calculator';
 
 interface Props {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   onOpenCalculatorModal: () => void;
-  onOpenCustomQuiz: () => void;
-  mizuUnlocked: boolean;
-  mizuAccessCode: string;
-  onOpenMizuPortal: () => void;
+  onOpenSupportModal: () => void;
+  onOpenLoginModal: () => void;
+  currentUser: SchoolUser | null;
 }
 
 export const Navbar: React.FC<Props> = ({
   activeTab,
   onTabChange,
   onOpenCalculatorModal,
-  onOpenCustomQuiz,
-  mizuUnlocked,
-  mizuAccessCode,
-  onOpenMizuPortal
+  onOpenSupportModal,
+  onOpenLoginModal,
+  currentUser
 }) => {
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -46,8 +47,9 @@ export const Navbar: React.FC<Props> = ({
   const navItems: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'topics', label: 'Topics & Practice', icon: BookOpen },
     { id: 'exams', label: 'Exams & Benchmarks', icon: GraduationCap },
-    { id: 'formulas', label: 'Formulas & Cheat Sheets', icon: FileText },
-    { id: 'calculator', label: 'Math Calculator', icon: Calculator },
+    { id: 'custom-quizzes', label: 'Customize Quizzes', icon: Sliders },
+    { id: 'formulas', label: 'Formulas & Reference', icon: FileText },
+    { id: 'calculator', label: 'Calculator', icon: Calculator },
   ];
 
   return (
@@ -83,7 +85,7 @@ export const Navbar: React.FC<Props> = ({
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             {navItems.map(item => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -91,7 +93,7 @@ export const Navbar: React.FC<Props> = ({
                 <button
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
                     isActive
                       ? 'bg-sky-50 text-sky-700 shadow-xs border border-sky-200/80'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
@@ -107,44 +109,65 @@ export const Navbar: React.FC<Props> = ({
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             
-            {/* Secret Unlocked Mizu Portal Pill (if activated) */}
-            {mizuUnlocked && (
-              <button
-                onClick={onOpenMizuPortal}
-                className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-md hover:from-emerald-500 hover:to-teal-500 transition animate-pulse"
-                title="Open Mizu In-Site Portal"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Mizu Portal</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-200" />
-              </button>
-            )}
-
-            {/* Custom Quiz button */}
+            {/* GEODVS-Support Button */}
             <button
-              onClick={onOpenCustomQuiz}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl transition"
-              title="Create Custom Quiz"
+              onClick={onOpenSupportModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-white text-xs font-bold shadow-xs border border-indigo-900/60 transition group cursor-pointer"
+              title="GEODVS-Support (AI Issue Reporting Tool)"
             >
-              <Sliders className="w-3.5 h-3.5 text-sky-600" />
-              <span>Custom Quiz</span>
+              <Bot className="w-3.5 h-3.5 text-sky-400 group-hover:rotate-12 transition-transform" />
+              <span>GEODVS-Support</span>
+              <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[9px] bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/30">
+                Report Issue
+              </span>
+            </button>
+
+            {/* School Login Button */}
+            <button
+              onClick={onOpenLoginModal}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                currentUser
+                  ? 'bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-2xs'
+              }`}
+              title={currentUser ? `Logged in as ${currentUser.name}` : 'School Login with Google or Clever'}
+            >
+              {currentUser ? (
+                <>
+                  <div className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
+                    {currentUser.name.charAt(0)}
+                  </div>
+                  <span className="hidden sm:inline max-w-[100px] truncate">{currentUser.name}</span>
+                  <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded ${
+                    currentUser.role === 'teacher' ? 'bg-indigo-100 text-indigo-700' : 'bg-sky-100 text-sky-700'
+                  }`}>
+                    {currentUser.role}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <School className="w-3.5 h-3.5 text-sky-600" />
+                  <span className="hidden sm:inline">School Login</span>
+                  <span className="text-[10px] text-slate-400 font-normal hidden md:inline">(Google/Clever)</span>
+                </>
+              )}
             </button>
 
             {/* Quick Calculator launch */}
             <button
               onClick={onOpenCalculatorModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition"
               title="Quick Math Calculator"
             >
               <Calculator className="w-3.5 h-3.5 text-sky-400" />
-              <span className="hidden sm:inline">Calculator</span>
+              <span>Calculator</span>
             </button>
 
             {/* Sound Mute/Unmute */}
             <button
               onClick={handleToggleSound}
               className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
-              title={soundOn ? 'Sound is ON (Click to mute)' : 'Sound is MUTED (Click to unmute)'}
+              title={soundOn ? 'Sound is ON' : 'Sound is MUTED'}
             >
               {soundOn ? <Volume2 className="w-4 h-4 text-sky-600" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
             </button>
@@ -152,7 +175,7 @@ export const Navbar: React.FC<Props> = ({
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(prev => !prev)}
-              className="md:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
+              className="xl:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -164,7 +187,7 @@ export const Navbar: React.FC<Props> = ({
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2">
+        <div className="xl:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2">
           {navItems.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -190,27 +213,25 @@ export const Navbar: React.FC<Props> = ({
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
             <button
               onClick={() => {
-                onOpenCustomQuiz();
+                onOpenSupportModal();
                 setMobileMenuOpen(false);
               }}
-              className="text-xs font-semibold text-sky-700 flex items-center gap-1.5"
+              className="text-xs font-bold text-sky-700 flex items-center gap-1.5"
             >
-              <Sliders className="w-4 h-4" />
-              <span>Build Custom Quiz</span>
+              <Bot className="w-4 h-4 text-sky-600" />
+              <span>GEODVS-Support Tool</span>
             </button>
 
-            {mizuUnlocked && (
-              <button
-                onClick={() => {
-                  onOpenMizuPortal();
-                  setMobileMenuOpen(false);
-                }}
-                className="text-xs font-bold text-emerald-600 flex items-center gap-1.5"
-              >
-                <Globe className="w-4 h-4" />
-                <span>Open Mizu Portal</span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                onOpenLoginModal();
+                setMobileMenuOpen(false);
+              }}
+              className="text-xs font-bold text-slate-700 flex items-center gap-1.5"
+            >
+              <School className="w-4 h-4 text-indigo-600" />
+              <span>{currentUser ? currentUser.name : 'School SSO'}</span>
+            </button>
           </div>
         </div>
       )}

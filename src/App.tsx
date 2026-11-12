@@ -9,13 +9,14 @@ import {
   BookOpen, 
   GraduationCap, 
   FileText, 
-  Globe, 
   Sparkles, 
   X, 
   ExternalLink,
-  ChevronRight,
   ShieldCheck,
-  Check
+  Check,
+  Bot,
+  School,
+  Sliders
 } from 'lucide-react';
 import { Navbar, ActiveTab } from './components/Navbar';
 import { TopicsView } from './components/TopicsView';
@@ -26,17 +27,37 @@ import { QuizRunner } from './components/QuizRunner';
 import { ExamRunner } from './components/ExamRunner';
 import { MizuPortalViewer } from './components/MizuPortalViewer';
 import { CustomQuizModal } from './components/CustomQuizModal';
+import { QuizCustomizer } from './components/QuizCustomizer';
+import { SchoolLoginModal } from './components/SchoolLoginModal';
+import { GeodvsSupportModal } from './components/GeodvsSupportModal';
 import { MathCategory, MathQuestion, ExamConfig, UserExamAttempt } from './types/math';
+import { SchoolUser } from './types/auth';
 import { mathQuestions } from './data/mathQuestions';
 import { predefinedExams } from './data/exams';
 
 const LOCAL_STORAGE_KEY_ATTEMPTS = 'testquiz_exam_attempts_v1';
 const LOCAL_STORAGE_KEY_MIZU = 'testquiz_mizu_unlocked_v1';
 const LOCAL_STORAGE_KEY_CODE = 'testquiz_mizu_code_v1';
+const LOCAL_STORAGE_KEY_USER = 'testquiz_school_user_v1';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('topics');
   
+  // School-based Account (Google / Clever for Student & Teacher)
+  const [currentUser, setCurrentUser] = useState<SchoolUser | null>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY_USER);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // GEODVS-Support Modal State (AI Issue Reporting Tool)
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [activeReportContext, setActiveReportContext] = useState<{ id: string; title: string; category?: string } | null>(null);
+
   // Quiz & Exam Session State
   const [activeQuiz, setActiveQuiz] = useState<{ questions: MathQuestion[]; title: string } | null>(null);
   const [activeExam, setActiveExam] = useState<ExamConfig | null>(null);
@@ -44,8 +65,8 @@ export default function App() {
   // Floating Calculator modal
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  // Custom Quiz modal
-  const [isCustomQuizOpen, setIsCustomQuizOpen] = useState(false);
+  // Custom Quiz quick-modal
+  const [isCustomQuizModalOpen, setIsCustomQuizModalOpen] = useState(false);
 
   // Secret Mizu Easter egg state
   const [mizuUnlocked, setMizuUnlocked] = useState<boolean>(() => {
@@ -75,6 +96,25 @@ export default function App() {
       return [];
     }
   });
+
+  // Handle Login & Logout
+  const handleLogin = (user: SchoolUser) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY_USER, JSON.stringify(user));
+    } catch {
+      // Ignore
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_KEY_USER);
+    } catch {
+      // Ignore
+    }
+  };
 
   // Save exam attempts
   const handleSaveAttempt = (attempt: UserExamAttempt) => {
@@ -136,6 +176,11 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleOpenReportWithQuestion = (context: { id: string; title: string; category?: string }) => {
+    setActiveReportContext(context);
+    setIsSupportModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
       
@@ -149,32 +194,13 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenCalculatorModal={() => setIsCalculatorOpen(true)}
-        onOpenCustomQuiz={() => setIsCustomQuizOpen(true)}
-        mizuUnlocked={mizuUnlocked}
-        mizuAccessCode={mizuAccessCode}
-        onOpenMizuPortal={() => setIsMizuPortalOpen(true)}
+        onOpenSupportModal={() => {
+          setActiveReportContext(null);
+          setIsSupportModalOpen(true);
+        }}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
+        currentUser={currentUser}
       />
-
-      {/* Secret Mizu Notification Banner (if unlocked) */}
-      {mizuUnlocked && !isMizuPortalOpen && (
-        <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-emerald-200 px-4 py-2 border-b border-emerald-500/30 text-xs flex items-center justify-between">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>
-                <strong className="text-white">Mizu Portal Connected</strong> (Code: <code className="font-mono text-emerald-300">{mizuAccessCode}</code>)
-              </span>
-            </div>
-            <button
-              onClick={() => setIsMizuPortalOpen(true)}
-              className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-xs"
-            >
-              <span>View In-Site</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -189,6 +215,7 @@ export default function App() {
               setActiveQuiz(null);
               setActiveTab('exams');
             }}
+            onReportQuestion={handleOpenReportWithQuestion}
           />
         ) : activeExam ? (
           <ExamRunner
@@ -204,7 +231,13 @@ export default function App() {
                 onSelectExamByCategory={handleSelectExamByCategory}
                 onOpenFormulas={() => setActiveTab('formulas')}
                 onOpenCalculator={() => setActiveTab('calculator')}
-                onOpenCustomQuiz={() => setIsCustomQuizOpen(true)}
+                onOpenCustomQuiz={() => setActiveTab('custom-quizzes')}
+                onOpenSupport={() => {
+                  setActiveReportContext(null);
+                  setIsSupportModalOpen(true);
+                }}
+                onOpenLogin={() => setIsLoginModalOpen(true)}
+                currentUser={currentUser}
                 recentAttempts={examAttempts}
               />
             )}
@@ -213,6 +246,23 @@ export default function App() {
               <ExamsView
                 onStartExam={handleStartExam}
                 attempts={examAttempts}
+              />
+            )}
+
+            {activeTab === 'custom-quizzes' && (
+              <QuizCustomizer
+                onBack={() => setActiveTab('topics')}
+                onLaunchQuiz={(questions, title) => {
+                  setActiveExam(null);
+                  setActiveQuiz({ questions, title });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onLaunchExam={(exam) => {
+                  setActiveQuiz(null);
+                  setActiveExam(exam);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                currentUser={currentUser}
               />
             )}
 
@@ -259,22 +309,25 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
-            <button onClick={() => { setActiveTab('topics'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition">
-              Mathematics Topics
+            <button onClick={() => { setActiveTab('topics'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition cursor-pointer">
+              Topics
             </button>
-            <button onClick={() => { setActiveTab('exams'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition">
-              Timed Examinations
+            <button onClick={() => { setActiveTab('exams'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition cursor-pointer">
+              Exams
             </button>
-            <button onClick={() => { setActiveTab('formulas'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition">
-              Formula Reference
+            <button onClick={() => { setActiveTab('custom-quizzes'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition cursor-pointer">
+              Customize Quizzes
             </button>
-            <button onClick={() => setIsCalculatorOpen(true)} className="hover:text-white transition">
-              Launch Calculator
+            <button onClick={() => { setActiveTab('formulas'); setActiveQuiz(null); setActiveExam(null); }} className="hover:text-white transition cursor-pointer">
+              Formulas
+            </button>
+            <button onClick={() => { setActiveReportContext(null); setIsSupportModalOpen(true); }} className="hover:text-white transition text-sky-400 font-semibold cursor-pointer">
+              GEODVS-Support
             </button>
           </div>
 
           <p className="text-xs text-slate-500">
-            &copy; {new Date().getFullYear()} TestQuiz Platform. All rights reserved.
+            &copy; {new Date().getFullYear()} TestQuiz Platform. Integrated School SSO &amp; GEODVS AI.
           </p>
         </div>
       </footer>
@@ -283,7 +336,7 @@ export default function App() {
       {!isCalculatorOpen && (
         <button
           onClick={() => setIsCalculatorOpen(true)}
-          className="fixed bottom-6 right-6 z-30 p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-2xl hover:shadow-sky-500/20 border border-slate-700/80 transition-all hover:scale-105 group flex items-center gap-2"
+          className="fixed bottom-6 right-6 z-30 p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-2xl hover:shadow-sky-500/20 border border-slate-700/80 transition-all hover:scale-105 group flex items-center gap-2 cursor-pointer"
           title="Open Floating Calculator"
         >
           <CalcIcon className="w-5 h-5 text-sky-400 group-hover:rotate-12 transition-transform" />
@@ -304,14 +357,34 @@ export default function App() {
         </div>
       )}
 
-      {/* Custom Quiz Modal */}
+      {/* Custom Quiz Quick-Modal (if triggered from quick selector) */}
       <CustomQuizModal
-        isOpen={isCustomQuizOpen}
-        onClose={() => setIsCustomQuizOpen(false)}
+        isOpen={isCustomQuizModalOpen}
+        onClose={() => setIsCustomQuizModalOpen(false)}
         onStartCustomQuiz={handleStartCustomQuiz}
       />
 
-      {/* Secret Mizu Portal In-Site Viewer Modal */}
+      {/* GEODVS-Support AI Issue Reporting Modal */}
+      <GeodvsSupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => {
+          setIsSupportModalOpen(false);
+          setActiveReportContext(null);
+        }}
+        currentUser={currentUser}
+        activeQuestionContext={activeReportContext}
+      />
+
+      {/* School Account Single Sign-On Modal (Google / Clever for Student & Teacher) */}
+      <SchoolLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
+
+      {/* Secret Mizu Portal In-Site Viewer Modal (Triggered by {234+0} in calculator) */}
       <MizuPortalViewer
         isOpen={isMizuPortalOpen}
         onClose={() => setIsMizuPortalOpen(false)}

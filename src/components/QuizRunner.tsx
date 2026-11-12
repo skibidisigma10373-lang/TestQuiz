@@ -10,7 +10,8 @@ import {
   ArrowLeft,
   Sparkles,
   Award,
-  Layers
+  Layers,
+  Bot
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { MathQuestion, MathCategory } from '../types/math';
@@ -22,13 +23,15 @@ interface Props {
   categoryTitle?: string;
   onExit: () => void;
   onTakeExam?: () => void;
+  onReportQuestion?: (context: { id: string; title: string; category?: string }) => void;
 }
 
 export const QuizRunner: React.FC<Props> = ({ 
   questions, 
   categoryTitle = 'Practice Quiz', 
   onExit,
-  onTakeExam
+  onTakeExam,
+  onReportQuestion
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -312,8 +315,8 @@ export const QuizRunner: React.FC<Props> = ({
           })}
         </div>
 
-        {/* Hint Accordion */}
-        <div className="pt-2">
+        {/* Hint Accordion & GEODVS Report */}
+        <div className="pt-2 flex items-center justify-between">
           {!showHint ? (
             <button
               onClick={() => setShowHint(true)}
@@ -330,6 +333,17 @@ export const QuizRunner: React.FC<Props> = ({
                 <span>{currentQ.hint}</span>
               </div>
             </div>
+          )}
+
+          {onReportQuestion && (
+            <button
+              onClick={() => onReportQuestion({ id: currentQ.id, title: currentQ.question, category: currentQ.category })}
+              className="text-[11px] text-slate-400 hover:text-rose-600 flex items-center gap-1 transition"
+              title="Report an error or issue with this question"
+            >
+              <Bot className="w-3.5 h-3.5 text-sky-600" />
+              <span>GEODVS Report</span>
+            </button>
           )}
         </div>
 

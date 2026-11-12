@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Globe, 
   Lock, 
@@ -10,25 +10,59 @@ import {
   Copy, 
   Check, 
   Sparkles,
-  ShieldCheck,
-  AlertCircle
+  ShieldCheck
 } from 'lucide-react';
+
+export interface SecretPortalTarget {
+  id: 'mizu' | 'salvador';
+  name: string;
+  url: string;
+  secretKey: string;
+}
+
+export const PORTAL_TARGETS: Record<'mizu' | 'salvador', SecretPortalTarget> = {
+  mizu: {
+    id: 'mizu',
+    name: 'Mizu In-App Portal',
+    url: 'https://mizu.hellohealthiness.co.uk/',
+    secretKey: '{234+0}',
+  },
+  salvador: {
+    id: 'salvador',
+    name: 'SalvadorAI Chat Portal',
+    url: 'https://salvadorai-apichat.ai.studio/',
+    secretKey: '{0001}',
+  },
+};
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   accessCode: string;
+  portal?: SecretPortalTarget;
 }
 
-export const MizuPortalViewer: React.FC<Props> = ({ isOpen, onClose, accessCode }) => {
+export const MizuPortalViewer: React.FC<Props> = ({ 
+  isOpen, 
+  onClose, 
+  accessCode,
+  portal = PORTAL_TARGETS.mizu
+}) => {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeKey, setIframeKey] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      setIframeKey(k => k + 1);
+    }
+  }, [isOpen, portal.url]);
+
   if (!isOpen) return null;
 
-  const targetUrl = 'https://mizu.hellohealthiness.co.uk/';
+  const targetUrl = portal.url;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(accessCode);
@@ -75,7 +109,7 @@ export const MizuPortalViewer: React.FC<Props> = ({ isOpen, onClose, accessCode 
             
             <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-700 text-xs font-semibold text-emerald-400">
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Mizu In-App Portal</span>
+              <span>{portal.name}</span>
             </div>
           </div>
 
@@ -150,7 +184,12 @@ export const MizuPortalViewer: React.FC<Props> = ({ isOpen, onClose, accessCode 
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white">
               SECRET UNLOCK
             </span>
-            <span>Generated from calculator secret key <code className="font-mono bg-emerald-100/80 px-1 py-0.5 rounded text-emerald-950 font-bold">&#123;234+0&#125;</code></span>
+            <span>
+              Generated from calculator secret key{' '}
+              <code className="font-mono bg-emerald-100/80 px-1 py-0.5 rounded text-emerald-950 font-bold">
+                {portal.secretKey}
+              </code>
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-slate-500 hidden sm:inline">Portal Active inside TestQuiz</span>
@@ -169,15 +208,17 @@ export const MizuPortalViewer: React.FC<Props> = ({ isOpen, onClose, accessCode 
           {isLoading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/70 z-10 text-white gap-3">
               <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm font-medium text-emerald-400">Loading Mizu Portal directly within TestQuiz...</p>
-              <span className="text-xs text-slate-400 font-mono">Connecting to https://mizu.hellohealthiness.co.uk/</span>
+              <p className="text-sm font-medium text-emerald-400">
+                Loading {portal.name} directly within TestQuiz...
+              </p>
+              <span className="text-xs text-slate-400 font-mono">Connecting to {targetUrl}</span>
             </div>
           )}
 
           <iframe
             key={iframeKey}
             src={targetUrl}
-            title="Mizu Portal - hellohealthiness.co.uk"
+            title={portal.name}
             className="w-full h-full border-0 bg-white"
             onLoad={() => setIsLoading(false)}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

@@ -14,15 +14,16 @@ import {
   X
 } from 'lucide-react';
 import { playClickSound, playSuccessSound, playSecretUnlockSound } from '../utils/sound';
+import { SecretPortalTarget, PORTAL_TARGETS } from './MizuPortalViewer';
 
 interface Props {
-  onUnlockMizu: (code: string) => void;
+  onUnlockPortal: (portalId: SecretPortalTarget['id'], code: string) => void;
   isFloating?: boolean;
   onCloseFloating?: () => void;
 }
 
 export const Calculator: React.FC<Props> = ({ 
-  onUnlockMizu, 
+  onUnlockPortal, 
   isFloating = false, 
   onCloseFloating 
 }) => {
@@ -34,28 +35,39 @@ export const Calculator: React.FC<Props> = ({
   ]);
   const [showHistory, setShowHistory] = useState(false);
   const [secretUnlocked, setSecretUnlocked] = useState(false);
+  const [unlockedPortalId, setUnlockedPortalId] = useState<SecretPortalTarget['id']>('mizu');
   const [generatedCode, setGeneratedCode] = useState('');
   const [isDeciphering, setIsDeciphering] = useState(false);
   const [decipherText, setDecipherText] = useState('');
+  const [decipheringPortalId, setDecipheringPortalId] = useState<SecretPortalTarget['id']>('mizu');
   const [isSciMode, setIsSciMode] = useState(true);
 
   const displayInputRef = useRef<HTMLInputElement>(null);
 
-  // Check for the secret command {234+0}
-  const checkSecretTrigger = (val: string): boolean => {
-    // Normalize spaces
+  // Check for secret commands: {234+0} or {0001}
+  const detectSecretTrigger = (val: string): SecretPortalTarget['id'] | null => {
     const clean = val.replace(/\s+/g, '');
-    return clean === '{234+0}' || clean === '{234+0}=' || clean.includes('{234+0}');
+    if (clean === '{234+0}' || clean === '{234+0}=' || clean.includes('{234+0}')) {
+      return 'mizu';
+    }
+    if (clean === '{0001}' || clean === '{0001}=' || clean.includes('{0001}')) {
+      return 'salvador';
+    }
+    return null;
   };
 
-  const triggerEasterEgg = () => {
+  const triggerEasterEgg = (portalId: SecretPortalTarget['id']) => {
     playSecretUnlockSound();
+    setDecipheringPortalId(portalId);
     setIsDeciphering(true);
 
-    // Random characters cipher animation
+    const targetPortal = PORTAL_TARGETS[portalId];
     const chars = '0123456789ABCDEF!@#$%&*';
     let iterations = 0;
-    const finalCode = `MIZU-234-HEALTH-${Math.floor(1000 + Math.random() * 9000)}`;
+    const finalCode =
+      portalId === 'salvador'
+        ? `SALVADOR-0001-AI-${Math.floor(1000 + Math.random() * 9000)}`
+        : `MIZU-234-HEALTH-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const interval = setInterval(() => {
       iterations++;
@@ -69,13 +81,14 @@ export const Calculator: React.FC<Props> = ({
         clearInterval(interval);
         setIsDeciphering(false);
         setSecretUnlocked(true);
+        setUnlockedPortalId(portalId);
         setGeneratedCode(finalCode);
         setDisplay(finalCode);
-        setEquation('SECRET KEY: {234+0} VERIFIED');
+        setEquation(`SECRET KEY: ${targetPortal.secretKey} VERIFIED`);
         playSuccessSound();
         // Open the portal directly in TestQuiz site
         setTimeout(() => {
-          onUnlockMizu(finalCode);
+          onUnlockPortal(portalId, finalCode);
         }, 600);
       }
     }, 80);
@@ -84,21 +97,22 @@ export const Calculator: React.FC<Props> = ({
   const handleInput = (char: string) => {
     playClickSound();
 
-    if (display === '0' && !['+', '-', '*', '/', '.', '^'].includes(char)) {
-      if (char === '{' || char === '}') {
-        setDisplay(char);
-      } else {
-        setDisplay(char);
-      }
+    if (isDeciphering) return;
+
+    if ((display === '0' || secretUnlocked || display === 'Error' || display === 'Syntax Error') && !['+', '-', '*', '/', '.', '^'].includes(char)) {
+      setSecretUnlocked(false);
+      setEquation('');
+      setDisplay(char);
       return;
     }
 
     const nextVal = display + char;
     setDisplay(nextVal);
 
-    // Check if the user has completed typing {234+0}
-    if (checkSecretTrigger(nextVal)) {
-      triggerEasterEgg();
+    // Check if the user has completed typing a secret key
+    const matchedPortal = detectSecretTrigger(nextVal);
+    if (matchedPortal) {
+      triggerEasterEgg(matchedPortal);
     }
   };
 
@@ -122,8 +136,9 @@ export const Calculator: React.FC<Props> = ({
     playClickSound();
 
     // Check secret
-    if (checkSecretTrigger(display)) {
-      triggerEasterEgg();
+    const matchedPortal = detectSecretTrigger(display);
+    if (matchedPortal) {
+      triggerEasterEgg(matchedPortal);
       return;
     }
 
@@ -263,7 +278,9 @@ export const Calculator: React.FC<Props> = ({
           <div className="flex flex-col items-center justify-center py-2 text-emerald-400">
             <Sparkles className="w-5 h-5 animate-spin text-amber-400 mb-1" />
             <span className="font-mono text-xs tracking-wider animate-pulse font-bold">{decipherText}</span>
-            <span className="text-[10px] text-slate-400 mt-1">Decrypting Mizu Portal Access Protocol...</span>
+            <span className="text-[10px] text-slate-400 mt-1">
+              Decrypting {PORTAL_TARGETS[decipheringPortalId].name} Access Protocol...
+            </span>
           </div>
         ) : (
           <>
@@ -284,7 +301,7 @@ export const Calculator: React.FC<Props> = ({
             {secretUnlocked && (
               <div className="mt-1 flex items-center justify-end gap-1.5 text-[11px] text-emerald-400 font-mono">
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Mizu Portal Link Activated!</span>
+                <span>{PORTAL_TARGETS[unlockedPortalId].name} Activated!</span>
               </div>
             )}
           </>
@@ -302,10 +319,10 @@ export const Calculator: React.FC<Props> = ({
             </div>
           </div>
           <button
-            onClick={() => onUnlockMizu(generatedCode)}
+            onClick={() => onUnlockPortal(unlockedPortalId, generatedCode)}
             className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-bold text-xs shadow-md transition shrink-0 flex items-center gap-1"
           >
-            <span>Open Mizu</span>
+            <span>{unlockedPortalId === 'salvador' ? 'Open SalvadorAI' : 'Open Mizu'}</span>
             <Sparkles className="w-3 h-3" />
           </button>
         </div>

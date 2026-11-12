@@ -25,7 +25,7 @@ import { FormulaGuide } from './components/FormulaGuide';
 import { Calculator } from './components/Calculator';
 import { QuizRunner } from './components/QuizRunner';
 import { ExamRunner } from './components/ExamRunner';
-import { MizuPortalViewer } from './components/MizuPortalViewer';
+import { MizuPortalViewer, SecretPortalTarget, PORTAL_TARGETS } from './components/MizuPortalViewer';
 import { CustomQuizModal } from './components/CustomQuizModal';
 import { QuizCustomizer } from './components/QuizCustomizer';
 import { SchoolLoginModal } from './components/SchoolLoginModal';
@@ -87,6 +87,7 @@ export default function App() {
   });
 
   const [isMizuPortalOpen, setIsMizuPortalOpen] = useState(false);
+  const [activePortalId, setActivePortalId] = useState<SecretPortalTarget['id']>('mizu');
 
   // Exam records in localStorage
   const [examAttempts, setExamAttempts] = useState<UserExamAttempt[]>(() => {
@@ -128,17 +129,24 @@ export default function App() {
     }
   };
 
-  // Triggered when secret code {234+0} is entered into calculator
-  const handleUnlockMizu = (generatedCode: string) => {
-    setMizuUnlocked(true);
+  // Triggered when secret codes ({234+0} or {0001}) are entered into calculator
+  const handleUnlockPortal = (portalId: SecretPortalTarget['id'], generatedCode: string) => {
+    setActivePortalId(portalId);
+    if (portalId === 'mizu') {
+      setMizuUnlocked(true);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY_MIZU, 'true');
+      } catch {
+        // Ignore
+      }
+    }
     setMizuAccessCode(generatedCode);
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY_MIZU, 'true');
       localStorage.setItem(LOCAL_STORAGE_KEY_CODE, generatedCode);
     } catch {
       // Ignore
     }
-    // Directly open the Mizu Portal viewer within TestQuiz
+    // Directly open the portal viewer within TestQuiz
     setIsMizuPortalOpen(true);
   };
 
@@ -286,7 +294,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <Calculator onUnlockMizu={handleUnlockMizu} />
+                <Calculator onUnlockPortal={handleUnlockPortal} />
               </div>
             )}
           </>
@@ -352,7 +360,7 @@ export default function App() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
           <div className="relative">
             <Calculator
-              onUnlockMizu={handleUnlockMizu}
+              onUnlockPortal={handleUnlockPortal}
               isFloating={true}
               onCloseFloating={() => setIsCalculatorOpen(false)}
             />
@@ -387,11 +395,12 @@ export default function App() {
         onLogout={handleLogout}
       />
 
-      {/* Secret Mizu Portal In-Site Viewer Modal (Triggered by {234+0} in calculator) */}
+      {/* Secret Portal In-Site Viewer Modal (Triggered by {234+0} or {0001} in calculator) */}
       <MizuPortalViewer
         isOpen={isMizuPortalOpen}
         onClose={() => setIsMizuPortalOpen(false)}
         accessCode={mizuAccessCode}
+        portal={PORTAL_TARGETS[activePortalId]}
       />
 
     </div>

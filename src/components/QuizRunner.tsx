@@ -17,6 +17,7 @@ import confetti from 'canvas-confetti';
 import { MathQuestion, MathCategory } from '../types/math';
 import { GeometryDiagram } from './GeometryDiagram';
 import { playSuccessSound, playErrorSound, playClickSound } from '../utils/sound';
+import { prepareQuizQuestions } from '../utils/shuffle';
 
 interface Props {
   questions: MathQuestion[];
@@ -33,6 +34,7 @@ export const QuizRunner: React.FC<Props> = ({
   onTakeExam,
   onReportQuestion
 }) => {
+  const [activeQuestions, setActiveQuestions] = useState<MathQuestion[]>(() => prepareQuizQuestions(questions));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -42,8 +44,8 @@ export const QuizRunner: React.FC<Props> = ({
   const [quizFinished, setQuizFinished] = useState(false);
   const [userHistory, setUserHistory] = useState<Array<{ qId: string; selected: number; correct: boolean }>>([]);
 
-  const currentQ = questions[currentIndex];
-  const progressPercent = Math.round(((currentIndex) / questions.length) * 100);
+  const currentQ = activeQuestions[currentIndex];
+  const progressPercent = Math.round(((currentIndex) / activeQuestions.length) * 100);
 
   const handleSelectOption = (index: number) => {
     if (isAnswered) return;
@@ -72,7 +74,7 @@ export const QuizRunner: React.FC<Props> = ({
 
   const handleNext = () => {
     playClickSound();
-    if (currentIndex + 1 < questions.length) {
+    if (currentIndex + 1 < activeQuestions.length) {
       setCurrentIndex(i => i + 1);
       setSelectedOption(null);
       setIsAnswered(false);
@@ -80,7 +82,7 @@ export const QuizRunner: React.FC<Props> = ({
       setShowSteps(false);
     } else {
       setQuizFinished(true);
-      if (score >= questions.length * 0.7) {
+      if (score >= activeQuestions.length * 0.7) {
         confetti({
           particleCount: 80,
           spread: 70,
@@ -92,6 +94,7 @@ export const QuizRunner: React.FC<Props> = ({
 
   const handleRestart = () => {
     playClickSound();
+    setActiveQuestions(prepareQuizQuestions(questions));
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsAnswered(false);
@@ -118,7 +121,7 @@ export const QuizRunner: React.FC<Props> = ({
 
   // Final Completion Screen
   if (quizFinished) {
-    const accuracy = Math.round((score / questions.length) * 100);
+    const accuracy = Math.round((score / activeQuestions.length) * 100);
     const passed = accuracy >= 70;
 
     return (
@@ -136,7 +139,7 @@ export const QuizRunner: React.FC<Props> = ({
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-xs text-slate-500 uppercase font-semibold">Total Score</span>
-              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">{score} / {questions.length}</p>
+              <p className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1">{score} / {activeQuestions.length}</p>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-xs text-slate-500 uppercase font-semibold">Accuracy</span>
@@ -229,7 +232,7 @@ export const QuizRunner: React.FC<Props> = ({
           <div className="text-right">
             <span className="text-slate-400 text-xs block">QUESTION</span>
             <span className="font-bold text-sky-400">{currentIndex + 1}</span>
-            <span className="text-slate-500 text-xs"> / {questions.length}</span>
+            <span className="text-slate-500 text-xs"> / {activeQuestions.length}</span>
           </div>
           <div className="text-right pl-3 border-l border-slate-700">
             <span className="text-slate-400 text-xs block">SCORE</span>
@@ -401,7 +404,7 @@ export const QuizRunner: React.FC<Props> = ({
                 onClick={handleNext}
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition flex items-center gap-2"
               >
-                <span>{currentIndex + 1 === questions.length ? 'Finish Quiz' : 'Next Question'}</span>
+                <span>{currentIndex + 1 === activeQuestions.length ? 'Finish Quiz' : 'Next Question'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             )}

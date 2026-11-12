@@ -19,6 +19,7 @@ import confetti from 'canvas-confetti';
 import { ExamConfig, MathQuestion, UserExamAttempt } from '../types/math';
 import { GeometryDiagram } from './GeometryDiagram';
 import { playClickSound, playSuccessSound, playErrorSound } from '../utils/sound';
+import { prepareQuizQuestions } from '../utils/shuffle';
 
 interface Props {
   exam: ExamConfig;
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export const ExamRunner: React.FC<Props> = ({ exam, onExit, onSaveAttempt }) => {
+  const [questions] = useState<MathQuestion[]>(() => prepareQuizQuestions(exam.questions));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, number>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
@@ -35,7 +37,6 @@ export const ExamRunner: React.FC<Props> = ({ exam, onExit, onSaveAttempt }) => 
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
 
-  const questions = exam.questions;
   const currentQ = questions[currentIndex];
 
   // Timer countdown

@@ -34,6 +34,7 @@ import { MathCategory, MathQuestion, ExamConfig, UserExamAttempt } from './types
 import { SchoolUser } from './types/auth';
 import { mathQuestions } from './data/mathQuestions';
 import { predefinedExams } from './data/exams';
+import { prepareQuizQuestions } from './utils/shuffle';
 
 const LOCAL_STORAGE_KEY_ATTEMPTS = 'testquiz_exam_attempts_v1';
 const LOCAL_STORAGE_KEY_MIZU = 'testquiz_mizu_unlocked_v1';
@@ -151,10 +152,10 @@ export default function App() {
       title = `${category.charAt(0).toUpperCase() + category.slice(1)} Practice Quiz`;
     }
 
-    // Shuffle questions
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    // Shuffle question order and randomize answer options
+    const prepared = prepareQuizQuestions(pool);
     setActiveExam(null);
-    setActiveQuiz({ questions: shuffled, title });
+    setActiveQuiz({ questions: prepared, title });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -165,14 +166,16 @@ export default function App() {
   };
 
   const handleStartExam = (exam: ExamConfig) => {
+    const preparedQuestions = prepareQuizQuestions(exam.questions);
     setActiveQuiz(null);
-    setActiveExam(exam);
+    setActiveExam({ ...exam, questions: preparedQuestions });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleStartCustomQuiz = (questions: MathQuestion[], title: string) => {
+    const prepared = prepareQuizQuestions(questions);
     setActiveExam(null);
-    setActiveQuiz({ questions, title });
+    setActiveQuiz({ questions: prepared, title });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -254,12 +257,12 @@ export default function App() {
                 onBack={() => setActiveTab('topics')}
                 onLaunchQuiz={(questions, title) => {
                   setActiveExam(null);
-                  setActiveQuiz({ questions, title });
+                  setActiveQuiz({ questions: prepareQuizQuestions(questions), title });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 onLaunchExam={(exam) => {
                   setActiveQuiz(null);
-                  setActiveExam(exam);
+                  setActiveExam({ ...exam, questions: prepareQuizQuestions(exam.questions) });
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
                 currentUser={currentUser}

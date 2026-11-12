@@ -1,0 +1,6 @@
+{
+  "name": "TestQuiz - Math Learning & Exams",
+  "description": "Comprehensive math learning platform featuring algebra, geometry, calculus, trigonometry quizzes, timed exams, study guides, and integrated calculator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

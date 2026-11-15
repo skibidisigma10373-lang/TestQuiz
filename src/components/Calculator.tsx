@@ -44,7 +44,7 @@ export const Calculator: React.FC<Props> = ({
 
   const displayInputRef = useRef<HTMLInputElement>(null);
 
-  // Check for secret commands: {234+0} or {0001}
+  // Check for secret commands: {234+0}, {0001}, or {1129}
   const detectSecretTrigger = (val: string): SecretPortalTarget['id'] | null => {
     const clean = val.replace(/\s+/g, '');
     if (clean === '{234+0}' || clean === '{234+0}=' || clean.includes('{234+0}')) {
@@ -52,6 +52,9 @@ export const Calculator: React.FC<Props> = ({
     }
     if (clean === '{0001}' || clean === '{0001}=' || clean.includes('{0001}')) {
       return 'salvador';
+    }
+    if (clean === '{1129}' || clean === '{1129}=' || clean.includes('{1129}')) {
+      return 'aetherdroid';
     }
     return null;
   };
@@ -64,10 +67,13 @@ export const Calculator: React.FC<Props> = ({
     const targetPortal = PORTAL_TARGETS[portalId];
     const chars = '0123456789ABCDEF!@#$%&*';
     let iterations = 0;
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
     const finalCode =
       portalId === 'salvador'
-        ? `SALVADOR-0001-AI-${Math.floor(1000 + Math.random() * 9000)}`
-        : `MIZU-234-HEALTH-${Math.floor(1000 + Math.random() * 9000)}`;
+        ? `SALVADOR-0001-AI-${randSuffix}`
+        : portalId === 'aetherdroid'
+          ? `AETHERDROID-1129-EMU-${randSuffix}`
+          : `MIZU-234-HEALTH-${randSuffix}`;
 
     const interval = setInterval(() => {
       iterations++;
@@ -322,7 +328,13 @@ export const Calculator: React.FC<Props> = ({
             onClick={() => onUnlockPortal(unlockedPortalId, generatedCode)}
             className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-lg font-bold text-xs shadow-md transition shrink-0 flex items-center gap-1"
           >
-            <span>{unlockedPortalId === 'salvador' ? 'Open SalvadorAI' : 'Open Mizu'}</span>
+            <span>
+              {unlockedPortalId === 'salvador'
+                ? 'Open SalvadorAI'
+                : unlockedPortalId === 'aetherdroid'
+                  ? 'Open AetherDroid'
+                  : 'Open Mizu'}
+            </span>
             <Sparkles className="w-3 h-3" />
           </button>
         </div>

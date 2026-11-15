@@ -14,13 +14,13 @@ import {
 } from 'lucide-react';
 
 export interface SecretPortalTarget {
-  id: 'mizu' | 'salvador';
+  id: 'mizu' | 'salvador' | 'aetherdroid';
   name: string;
   url: string;
   secretKey: string;
 }
 
-export const PORTAL_TARGETS: Record<'mizu' | 'salvador', SecretPortalTarget> = {
+export const PORTAL_TARGETS: Record<'mizu' | 'salvador' | 'aetherdroid', SecretPortalTarget> = {
   mizu: {
     id: 'mizu',
     name: 'Mizu In-App Portal',
@@ -32,6 +32,12 @@ export const PORTAL_TARGETS: Record<'mizu' | 'salvador', SecretPortalTarget> = {
     name: 'SalvadorAI Chat Portal',
     url: 'https://salvadorai-apichat.ai.studio/',
     secretKey: '{0001}',
+  },
+  aetherdroid: {
+    id: 'aetherdroid',
+    name: 'AetherDroid EmuBeta Portal',
+    url: 'https://aetherdroid-emubeta-try.netlify.app/',
+    secretKey: '{1129}',
   },
 };
 
